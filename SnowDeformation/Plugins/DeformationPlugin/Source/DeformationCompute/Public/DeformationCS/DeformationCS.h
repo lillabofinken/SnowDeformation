@@ -6,7 +6,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Materials/MaterialRenderProxy.h"
 
-#include "DeformationCS.generated.h"
+//#include "DeformationCS.generated.h"
 
 struct DEFORMATIONCOMPUTE_API FDeformationCSDispatchParams
 {
@@ -62,19 +62,19 @@ public:
 };
 
 // This is a static blueprint library that can be used to invoke our compute shader from blueprints.
-UCLASS()
-class DEFORMATIONCOMPUTE_API UDeformationCSLibrary : public UObject
-{
-	GENERATED_BODY()
-	
-public:
-	UFUNCTION(BlueprintCallable)
-	static void ExecuteRTComputeShader(UTextureRenderTarget2D* RT)
-	{
-		// Create a dispatch parameters struct and fill it the input array with our args
-		FDeformationCSDispatchParams Params(RT->SizeX, RT->SizeY, 1);
-		Params.RenderTarget = RT->GameThread_GetRenderTargetResource();
-
-		FDeformationCSInterface::Dispatch(Params);
-	}
-};
+//UCLASS()
+//class DEFORMATIONCOMPUTE_API UDeformationCSLibrary : public UObject
+//{
+//	GENERATED_BODY()
+//	
+//public:
+//	UFUNCTION(BlueprintCallable)
+//	static void ExecuteRTComputeShader(UTextureRenderTarget2D* RT)
+//	{
+//		// Create a dispatch parameters struct and fill it the input array with our args
+//		FDeformationCSDispatchParams Params(RT->SizeX, RT->SizeY, 1);
+//		Params.RenderTarget = RT->GameThread_GetRenderTargetResource();
+//
+//		FDeformationCSInterface::Dispatch(Params);
+//	}
+//};

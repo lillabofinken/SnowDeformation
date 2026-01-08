@@ -1,6 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "DeformationPlugin.h"
+#include "../Public/DeformationPlugin.h"
 
 #define LOCTEXT_NAMESPACE "FDeformationPluginModule"
 

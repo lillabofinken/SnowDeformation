@@ -103,7 +103,7 @@ void FDeformationCSInterface::DispatchRenderThread(FRHICommandListImmediate& RHI
 
 	{
 		SCOPE_CYCLE_COUNTER(STAT_DeformationCS_Execute);
-		DECLARE_GPU_STAT(DeformationCS)
+		DECLARE_GPU_STAT(DeformationCS);
 		RDG_EVENT_SCOPE(GraphBuilder, "DeformationCS");
 		RDG_GPU_STAT_SCOPE(GraphBuilder, DeformationCS);
 		

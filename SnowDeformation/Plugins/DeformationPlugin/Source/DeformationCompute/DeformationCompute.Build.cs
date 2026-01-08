@@ -8,13 +8,13 @@ public class DeformationCompute: ModuleRules
 
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-		
-		PrivateIncludePaths.AddRange(new string[] 
-		{
-			"Runtime/Renderer/Private",
-			"DeformationCompute/Private"
-		});
-		if (Target.bBuildEditor == true)
+
+        PrivateIncludePaths.AddRange(new string[] 
+        {
+        	"Runtime/Renderer/Private",
+        	"DeformationCompute/Private"
+        });
+        if (Target.bBuildEditor == true)
 		{
 			PrivateDependencyModuleNames.Add("TargetPlatform");
 		}
@@ -29,7 +29,7 @@ public class DeformationCompute: ModuleRules
 			"RenderCore",
 			"RHI",
 			"Projects"
-		});
+        });
 		
 		if (Target.bBuildEditor == true)
 		{
