@@ -1,6 +1,8 @@
 #include "/Engine/Public/Platform.ush"
 
 RWTexture2D<float3> RenderTarget;
+float testValue;
+
 
 [numthreads(THREADS_X, THREADS_Y, THREADS_Z)]
 void DeformationCS(
@@ -12,5 +14,5 @@ void DeformationCS(
 	int y = floor(DispatchThreadId.y / 16.f);
 	int c = (x + y % 2) % 2;
 	
-	RenderTarget[DispatchThreadId.xy] = float3(c, c, c);
+	RenderTarget[DispatchThreadId.xy] = float3(c, testValue, c);
 }

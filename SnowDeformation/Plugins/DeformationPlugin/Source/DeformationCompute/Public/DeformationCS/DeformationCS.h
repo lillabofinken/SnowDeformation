@@ -16,7 +16,7 @@ struct DEFORMATIONCOMPUTE_API FDeformationCSDispatchParams
 
 	
 	FRenderTarget* RenderTarget;
-	
+	float testValue = 0;
 	
 
 	FDeformationCSDispatchParams(int x, int y, int z)

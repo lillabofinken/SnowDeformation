@@ -16,6 +16,7 @@
 DECLARE_STATS_GROUP(TEXT("DeformationCS"), STATGROUP_DeformationCS, STATCAT_Advanced);
 DECLARE_CYCLE_STAT(TEXT("DeformationCS Execute"), STAT_DeformationCS_Execute, STATGROUP_DeformationCS);
 
+#define SS_TextureFormat PF_G16R16F  
 // This class carries our parameter declarations and acts as the bridge between cpp and HLSL.
 class DEFORMATIONCOMPUTE_API FDeformationCS: public FGlobalShader
 {
@@ -55,6 +56,7 @@ public:
 
 		
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, RenderTarget)
+		SHADER_PARAMETER(float, testValue)
 		
 
 	END_SHADER_PARAMETER_STRUCT()
@@ -121,11 +123,16 @@ void FDeformationCSInterface::DispatchRenderThread(FRHICommandListImmediate& RHI
 			FDeformationCS::FParameters* PassParameters = GraphBuilder.AllocParameters<FDeformationCS::FParameters>();
 
 			
-			FRDGTextureDesc Desc(FRDGTextureDesc::Create2D(Params.RenderTarget->GetSizeXY(), PF_B8G8R8A8, FClearValueBinding::White, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
+			FRDGTextureDesc Desc(FRDGTextureDesc::Create2D(Params.RenderTarget->GetSizeXY(), SS_TextureFormat, FClearValueBinding::White, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
 			FRDGTextureRef TmpTexture = GraphBuilder.CreateTexture(Desc, TEXT("DeformationCS_TempTexture"));
 			FRDGTextureRef TargetTexture = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("DeformationCS_RT"));
-			PassParameters->RenderTarget = GraphBuilder.CreateUAV(TmpTexture);
-			
+
+			{// Pass Values to shader, EPIC VERY COOL
+				
+				PassParameters->RenderTarget = GraphBuilder.CreateUAV(TmpTexture);
+				PassParameters->testValue = Params.testValue;
+				
+			}// Pass Values to shader, EPIC VERY COOL
 
 			auto GroupCount = FComputeShaderUtils::GetGroupCount(FIntVector(Params.X, Params.Y, Params.Z), FComputeShaderUtils::kGolden2DGroupSize);
 			GraphBuilder.AddPass(
@@ -139,7 +146,7 @@ void FDeformationCSInterface::DispatchRenderThread(FRHICommandListImmediate& RHI
 
 			
 			// The copy will fail if we don't have matching formats, let's check and make sure we do.
-			if (TargetTexture->Desc.Format == PF_B8G8R8A8) {
+			if (TargetTexture->Desc.Format == SS_TextureFormat) {
 				AddCopyTexturePass(GraphBuilder, TmpTexture, TargetTexture, FRHICopyTextureInfo());
 			} else {
 				#if WITH_EDITOR
