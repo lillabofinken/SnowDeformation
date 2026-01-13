@@ -18,7 +18,9 @@ public class SnowDeformation : ModuleRules
 			"StateTreeModule",
 			"GameplayStateTreeModule",
 			"UMG",
-			"Slate"
+			"Slate",
+			"DeformationPlugin",
+			"DeformationCompute",
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });

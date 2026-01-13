@@ -2,6 +2,10 @@
 
 #include "../Public/ComputeShaderManagerComponent.h"
 
+#include "DeformationCSLibrary.h"
+#include "DeformationCS/DeformationCS.h"
+
+
 // Sets default values for this component's properties
 UComputeShaderManagerComponent::UComputeShaderManagerComponent()
 {
@@ -27,8 +31,7 @@ void UComputeShaderManagerComponent::BeginPlay()
 void UComputeShaderManagerComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	tempTest += DeltaTime;
-	
+	SendDataAndRunShader();
 	// ...
 }
 
@@ -59,10 +62,79 @@ void UComputeShaderManagerComponent::RemoveTrackedObject(USceneComponent* _track
 	}
 }
 
-void UComputeShaderManagerComponent::UpdateTrackedObjectList()
+void UComputeShaderManagerComponent::SendDataAndRunShader()
 {
+	auto matrices = MatricesToSend();
+	FDeformationCSDispatchParams Params(RenderTarget->SizeX, RenderTarget->SizeY, 1);
+
+
+	Params.RenderTarget = RenderTarget->GameThread_GetRenderTargetResource();
+	Params.MaxSnowDepth = MaxSnowDepth;
+	Params.SnowCorners = FLinearColor(SnowCornerOne.X, SnowCornerOne.Y, SnowCornerTwo.X, SnowCornerTwo.Y);
 	
+	for(int i = 0; i < 64; i++ )
+	{
+		if(	i < matrices.Num() )
+		{
+			FMatrix44f matrix = FMatrix44f( matrices[ i ] );;
+			Params.TrackedObjectMatrices[ i ] = matrix;
+		}
+		else
+			Params.TrackedObjectMatrices[ i ] = FMatrix44f::Identity;
+	}
+	const int ObjectAmount = matrices.Num();
+	Params.ObjectAmount = ObjectAmount;
+	
+	UDeformationCSLibrary::ExecuteRTComputeShader(Params);
 }
+
+TArray<FMatrix44f> UComputeShaderManagerComponent::MatricesToSend()
+{
+	TArray<FMatrix44f> output;
+	int loop = ( ( MaxObjectUpdatesPerFrame < TrackedObjects.Num() ) ? MaxObjectUpdatesPerFrame : TrackedObjects.Num() );
+	for( int i = 0; i < loop; i++ )
+	{
+		if( TrackedObjects.Num() == 0 ) return output;
+		if( !TrackedObjects.IsValidIndex( ObjectIndex ) ) ObjectIndex = 0;
+
+		auto object = TrackedObjects[ ObjectIndex ];
+
+		if( IsValid( object ) )
+		{
+			const float scale = object->GetComponentScale().X * object->GetComponentScale().X;
+			
+			const FVector traceStart = object->GetComponentLocation() + FVector( 0,0,scale );
+			const FVector traceEnd = traceStart - FVector(0,0,scale * 2 + MaxSnowDepth );
+			
+			FCollisionObjectQueryParams objectQueryParams;
+			objectQueryParams.AddObjectTypesToQuery(DeformationChannel);
+
+			FHitResult hit;
+			GetWorld()->LineTraceSingleByObjectType( hit, traceStart, traceEnd,objectQueryParams );
+			
+			const float height = hit.bBlockingHit ? hit.Distance - scale : 10000000.0f;
+
+			FMatrix44f matrix = FMatrix44f( TrackedObjects[ i ]->GetComponentTransform().ToMatrixWithScale() );
+			matrix.M[ 3 ][ 2 ] = height;
+			output.Add( matrix) ;
+
+#if !UE_BUILD_SHIPPING
+			if(debug) DrawDebugLine(GetWorld(),traceStart, traceEnd, hit.bBlockingHit ? FColor::Red :FColor::Green, false, 0.0f, 0, 10 );
+#endif
+		}
+		else
+		{
+			TrackedObjects.RemoveAt( ObjectIndex );
+			loop--;
+			i--;
+			
+			continue;
+		}
+		ObjectIndex++;
+	}
+	return output;
+}
+
 
 UComputeShaderManagerComponent* UComputeShaderManagerComponent::GetDeformationManager()
 {

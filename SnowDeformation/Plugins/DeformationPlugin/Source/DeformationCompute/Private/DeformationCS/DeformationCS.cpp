@@ -31,35 +31,39 @@ public:
 		FDeformationCS_Perm_TEST
 	>;
 
-	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		/*
-		* Here's where you define one or more of the input parameters for your shader.
-		* Some examples:
-		*/
-		// SHADER_PARAMETER(uint32, MyUint32) // On the shader side: uint32 MyUint32;
-		// SHADER_PARAMETER(FVector3f, MyVector) // On the shader side: float3 MyVector;
+	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, ) // START
+	/*
+	* Here's where you define one or more of the input parameters for your shader.
+	* Some examples:
+	*/
+	// SHADER_PARAMETER(uint32, MyUint32) // On the shader side: uint32 MyUint32;
+	// SHADER_PARAMETER(FVector3f, MyVector) // On the shader side: float3 MyVector;
 
-		// SHADER_PARAMETER_TEXTURE(Texture2D, MyTexture) // On the shader side: Texture2D<float4> MyTexture; (float4 should be whatever you expect each pixel in the texture to be, in this case float4(R,G,B,A) for 4 channels)
-		// SHADER_PARAMETER_SAMPLER(SamplerState, MyTextureSampler) // On the shader side: SamplerState MySampler; // CPP side: TStaticSamplerState<ESamplerFilter::SF_Bilinear>::GetRHI();
+	// SHADER_PARAMETER_TEXTURE(Texture2D, MyTexture) // On the shader side: Texture2D<float4> MyTexture; (float4 should be whatever you expect each pixel in the texture to be, in this case float4(R,G,B,A) for 4 channels)
+	// SHADER_PARAMETER_SAMPLER(SamplerState, MyTextureSampler) // On the shader side: SamplerState MySampler; // CPP side: TStaticSamplerState<ESamplerFilter::SF_Bilinear>::GetRHI();
 
-		// SHADER_PARAMETER_ARRAY(float, MyFloatArray, [3]) // On the shader side: float MyFloatArray[3];
+	// SHADER_PARAMETER_ARRAY(float, MyFloatArray, [3]) // On the shader side: float MyFloatArray[3];
 
-		// SHADER_PARAMETER_UAV(RWTexture2D<FVector4f>, MyTextureUAV) // On the shader side: RWTexture2D<float4> MyTextureUAV;
-		// SHADER_PARAMETER_UAV(RWStructuredBuffer<FMyCustomStruct>, MyCustomStructs) // On the shader side: RWStructuredBuffer<FMyCustomStruct> MyCustomStructs;
-		// SHADER_PARAMETER_UAV(RWBuffer<FMyCustomStruct>, MyCustomStructs) // On the shader side: RWBuffer<FMyCustomStruct> MyCustomStructs;
+	// SHADER_PARAMETER_UAV(RWTexture2D<FVector4f>, MyTextureUAV) // On the shader side: RWTexture2D<float4> MyTextureUAV;
+	// SHADER_PARAMETER_UAV(RWStructuredBuffer<FMyCustomStruct>, MyCustomStructs) // On the shader side: RWStructuredBuffer<FMyCustomStruct> MyCustomStructs;
+	// SHADER_PARAMETER_UAV(RWBuffer<FMyCustomStruct>, MyCustomStructs) // On the shader side: RWBuffer<FMyCustomStruct> MyCustomStructs;
 
-		// SHADER_PARAMETER_SRV(StructuredBuffer<FMyCustomStruct>, MyCustomStructs) // On the shader side: StructuredBuffer<FMyCustomStruct> MyCustomStructs;
-		// SHADER_PARAMETER_SRV(Buffer<FMyCustomStruct>, MyCustomStructs) // On the shader side: Buffer<FMyCustomStruct> MyCustomStructs;
-		// SHADER_PARAMETER_SRV(Texture2D<FVector4f>, MyReadOnlyTexture) // On the shader side: Texture2D<float4> MyReadOnlyTexture;
+	// SHADER_PARAMETER_SRV(StructuredBuffer<FMyCustomStruct>, MyCustomStructs) // On the shader side: StructuredBuffer<FMyCustomStruct> MyCustomStructs;
+	// SHADER_PARAMETER_SRV(Buffer<FMyCustomStruct>, MyCustomStructs) // On the shader side: Buffer<FMyCustomStruct> MyCustomStructs;
+	// SHADER_PARAMETER_SRV(Texture2D<FVector4f>, MyReadOnlyTexture) // On the shader side: Texture2D<float4> MyReadOnlyTexture;
 
-		// SHADER_PARAMETER_STRUCT_REF(FMyCustomStruct, MyCustomStruct)
+	// SHADER_PARAMETER_STRUCT_REF(FMyCustomStruct, MyCustomStruct)
 
-		
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, RenderTarget)
-		SHADER_PARAMETER(float, testValue)
-		
+	
+	SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, RenderTarget)
+	SHADER_PARAMETER_ARRAY(FMatrix44f, TrackedObjectMatrices, [64])
+	SHADER_PARAMETER(int, ObjectAmount)
+	SHADER_PARAMETER(float, MaxSnowDepth)
+	SHADER_PARAMETER(FLinearColor, SnowCorners)
+	
+	
 
-	END_SHADER_PARAMETER_STRUCT()
+	END_SHADER_PARAMETER_STRUCT()// END
 
 public:
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
@@ -130,7 +134,13 @@ void FDeformationCSInterface::DispatchRenderThread(FRHICommandListImmediate& RHI
 			{// Pass Values to shader, EPIC VERY COOL
 				
 				PassParameters->RenderTarget = GraphBuilder.CreateUAV(TmpTexture);
-				PassParameters->testValue = Params.testValue;
+				for( int i = 0; i < /*Params.ObjectAmount*/ 64; i++ )
+				{
+					PassParameters->TrackedObjectMatrices[ i ] = Params.TrackedObjectMatrices[ i ];				
+				}
+				PassParameters->ObjectAmount = Params.ObjectAmount;
+				PassParameters->MaxSnowDepth = Params.MaxSnowDepth;
+				PassParameters->SnowCorners = Params.SnowCorners;
 				
 			}// Pass Values to shader, EPIC VERY COOL
 

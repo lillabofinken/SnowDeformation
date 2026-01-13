@@ -15,8 +15,11 @@ struct DEFORMATIONCOMPUTE_API FDeformationCSDispatchParams
 	int Z;
 
 	
-	FRenderTarget* RenderTarget;
-	float testValue = 0;
+	FRenderTarget*	RenderTarget;
+	FMatrix44f		TrackedObjectMatrices[64];
+	int				ObjectAmount;
+	float			MaxSnowDepth;
+	FLinearColor	SnowCorners;
 	
 
 	FDeformationCSDispatchParams(int x, int y, int z)
