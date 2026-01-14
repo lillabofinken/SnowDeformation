@@ -33,5 +33,5 @@ void DeformationCS(
 	
 	
 	float c2 = frac( pos.x * 0.01f );
-	RenderTarget[ DispatchThreadId.xy ] = float2( c, distanceFrac );
+	RenderTarget[ DispatchThreadId.xy ] = float2( distanceFrac, c );
 }

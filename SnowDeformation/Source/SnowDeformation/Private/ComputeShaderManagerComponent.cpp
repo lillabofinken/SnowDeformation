@@ -4,6 +4,7 @@
 
 #include "DeformationCSLibrary.h"
 #include "DeformationCS/DeformationCS.h"
+#include "Kismet/KismetRenderingLibrary.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
 
 
@@ -28,6 +29,8 @@ void UComputeShaderManagerComponent::BeginPlay()
 		MPC_Instance = GetWorld()->GetParameterCollectionInstance( MPC );
 		UpdateCornersMPC();
 	}
+	if( IsValid( RenderTarget ) && IsValid( DeformationClearMaterial ) )
+		UKismetRenderingLibrary::DrawMaterialToRenderTarget( this, RenderTarget, DeformationClearMaterial );
 	
 	// ...
 	
@@ -128,7 +131,7 @@ TArray<FMatrix44f> UComputeShaderManagerComponent::MatricesToSend()
 			FHitResult hit;
 			GetWorld()->LineTraceSingleByObjectType( hit, traceStart, traceEnd,objectQueryParams );
 			
-			const float height = hit.bBlockingHit ? hit.Distance - scale : 10000000.0f;
+			const float height = hit.bBlockingHit ? hit.Distance : 10000000.0f;
 
 			FMatrix44f matrix = FMatrix44f( TrackedObjects[ i ]->GetComponentTransform().ToMatrixWithScale() );
 			matrix.M[ 3 ][ 2 ] = height;
