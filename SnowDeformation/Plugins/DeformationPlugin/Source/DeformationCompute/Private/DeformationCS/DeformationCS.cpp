@@ -56,6 +56,9 @@ public:
 
 	
 	SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, RenderTarget)
+	SHADER_PARAMETER_RDG_TEXTURE    ( Texture2D, RenderTargetRead )
+	SHADER_PARAMETER                ( FIntPoint, Resolution )
+	
 	SHADER_PARAMETER_ARRAY(FMatrix44f, TrackedObjectMatrices, [64])
 	SHADER_PARAMETER(int, ObjectAmount)
 	SHADER_PARAMETER(float, MaxSnowDepth)
@@ -126,14 +129,16 @@ void FDeformationCSInterface::DispatchRenderThread(FRHICommandListImmediate& RHI
 		if (bIsShaderValid) {
 			FDeformationCS::FParameters* PassParameters = GraphBuilder.AllocParameters<FDeformationCS::FParameters>();
 
-			
-			FRDGTextureDesc Desc(FRDGTextureDesc::Create2D(Params.RenderTarget->GetSizeXY(), SS_TextureFormat, FClearValueBinding::White, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
+			auto resolution = Params.RenderTarget->GetSizeXY();
+			FRDGTextureDesc Desc(FRDGTextureDesc::Create2D(resolution, SS_TextureFormat, FClearValueBinding::White, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
 			FRDGTextureRef TmpTexture = GraphBuilder.CreateTexture(Desc, TEXT("DeformationCS_TempTexture"));
-			FRDGTextureRef TargetTexture = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("DeformationCS_RT"));
-
+			FRDGTextureRef TargetTexture = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("DeformationCS_RT_Write"));
+			FRDGTextureRef InputTexture = RegisterExternalTexture(GraphBuilder,Params.RenderTarget->GetRenderTargetTexture(),TEXT( "DeformationCS_RT_Read" ) );
 			{// Pass Values to shader, EPIC VERY COOL
 				
 				PassParameters->RenderTarget = GraphBuilder.CreateUAV(TmpTexture);
+				PassParameters->RenderTargetRead = InputTexture;
+				PassParameters->Resolution = resolution;
 				for( int i = 0; i < /*Params.ObjectAmount*/ 64; i++ )
 				{
 					PassParameters->TrackedObjectMatrices[ i ] = Params.TrackedObjectMatrices[ i ];				

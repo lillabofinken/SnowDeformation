@@ -4,6 +4,7 @@
 
 #include "DeformationCSLibrary.h"
 #include "DeformationCS/DeformationCS.h"
+#include "Materials/MaterialParameterCollectionInstance.h"
 
 
 // Sets default values for this component's properties
@@ -13,6 +14,7 @@ UComputeShaderManagerComponent::UComputeShaderManagerComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 	DeformationManager = this;
+	
 	// ...
 }
 
@@ -21,7 +23,12 @@ UComputeShaderManagerComponent::UComputeShaderManagerComponent()
 void UComputeShaderManagerComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
+	if( MPC )
+	{
+		MPC_Instance = GetWorld()->GetParameterCollectionInstance( MPC );
+		UpdateCornersMPC();
+	}
+	
 	// ...
 	
 }
@@ -33,6 +40,15 @@ void UComputeShaderManagerComponent::TickComponent(float DeltaTime, ELevelTick T
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	SendDataAndRunShader();
 	// ...
+}
+
+void UComputeShaderManagerComponent::UpdateCornersMPC()
+{
+	if( MPC_Instance )
+	{
+		FLinearColor corners = FLinearColor(SnowCornerOne.X,SnowCornerOne.Y,SnowCornerTwo.X,SnowCornerTwo.Y );
+		MPC_Instance->SetVectorParameterValue("Corners",corners);
+	}
 }
 
 void UComputeShaderManagerComponent::AddTrackedObjects(TArray<USceneComponent*> _trackedComponents)
@@ -64,7 +80,7 @@ void UComputeShaderManagerComponent::RemoveTrackedObject(USceneComponent* _track
 
 void UComputeShaderManagerComponent::SendDataAndRunShader()
 {
-	auto matrices = MatricesToSend();
+	TArray<FMatrix44f> matrices = MatricesToSend();
 	FDeformationCSDispatchParams Params(RenderTarget->SizeX, RenderTarget->SizeY, 1);
 
 
@@ -104,7 +120,7 @@ TArray<FMatrix44f> UComputeShaderManagerComponent::MatricesToSend()
 			const float scale = object->GetComponentScale().X * object->GetComponentScale().X;
 			
 			const FVector traceStart = object->GetComponentLocation() + FVector( 0,0,scale );
-			const FVector traceEnd = traceStart - FVector(0,0,scale * 2 + MaxSnowDepth );
+			const FVector traceEnd = traceStart - FVector(0,0,scale * 2 + MaxSnowDepth + 100.0 );
 			
 			FCollisionObjectQueryParams objectQueryParams;
 			objectQueryParams.AddObjectTypesToQuery(DeformationChannel);

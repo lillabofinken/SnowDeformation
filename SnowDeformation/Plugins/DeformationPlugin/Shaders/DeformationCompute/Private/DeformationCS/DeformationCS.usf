@@ -1,6 +1,9 @@
 #include "/Engine/Public/Platform.ush"
 
-RWTexture2D<float3>	RenderTarget;
+RWTexture2D<float2>	RenderTarget;
+Texture2D<float2>   RenderTargetRead;
+int2                Resolution;
+
 float				MaxSnowDepth;
 float4x4            TrackedObjectMatrices[ 64 ];
 int					ObjectAmount;
@@ -12,25 +15,23 @@ void DeformationCS(
 	uint3 DispatchThreadId : SV_DispatchThreadID,
 	uint GroupIndex : SV_GroupIndex )
 {
-	float2 mapScale = abs(SnowCorners.xy - SnowCorners.zw);
+	const float2 MapScale       = abs( SnowCorners.xy - SnowCorners.zw );
+	const float2 UV             = float2( DispatchThreadId.xy ) / float2( Resolution );
+	const float3 PixelPosition  = float3( UV * MapScale, 0 );
+	const float3 ObjectPosition = TrackedObjectMatrices[ 0 ][ 3 ].xyz + float3( SnowCorners.xy ,0 );
+
+	float distanceFrac = frac(length(PixelPosition - ObjectPosition) * 0.01);
 	
-	float3 pixelPosition = float3( DispatchThreadId.xy,0) * float3(mapScale, 1);
-
-	float3 pos = TrackedObjectMatrices[ 0 ][ 3 ].xyz;
-	pos -= float3(SnowCorners.xy,0);
-
-	float distance = length(pos - pixelPosition);
-	float red = frac(distance / 1000.0);
-
-	//RenderTarget[DispatchThreadId.xy] = sin(distance * 0.25);
+	float2 pos = TrackedObjectMatrices[ 0 ][ 3 ].xy;
+	pos -= SnowCorners.xy;
 	
 	// Simple checkerboard
-	int x = floor(DispatchThreadId.x / 16.f);
-	int y = floor(DispatchThreadId.y / 16.f);
+	int x = floor( DispatchThreadId.x / 16.f );
+	int y = floor( DispatchThreadId.y / 16.f );
 	int c = (x + y % 2) % 2;
 
 	
 	
-	float c2 = frac(pos.x * 0.01f);
-	RenderTarget[DispatchThreadId.xy] = red;//float3(red, c, c);
+	float c2 = frac( pos.x * 0.01f );
+	RenderTarget[ DispatchThreadId.xy ] = float2( c, distanceFrac );
 }

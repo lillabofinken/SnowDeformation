@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
+#include "Materials/MaterialParameterCollection.h"
 #include "ComputeShaderManagerComponent.generated.h"
 
 
@@ -34,26 +35,25 @@ public:
 	UPROPERTY( EditAnywhere, Category = "Manager" )
 	int MaxObjectUpdatesPerFrame = 10;
 	
-	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) UMaterialInterface*     DeformationCalculationMaterial;
-	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) UMaterialInterface*     DeformationClearMaterial;
-	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) UTextureRenderTarget2D* RenderTarget;
+	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) UMaterialInterface*           DeformationClearMaterial;
+	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) UTextureRenderTarget2D*       RenderTarget;
+	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) UMaterialParameterCollection* MPC = nullptr;
 
 	UPROPERTY( EditAnywhere, Category = "SnowSettings" ) TEnumAsByte<ECollisionChannel> DeformationChannel;
 	UPROPERTY( EditAnywhere, Category = "SnowSettings" ) float   MaxSnowDepth = 50;
 	UPROPERTY( EditAnywhere, Category = "SnowSettings" ) FVector SnowCornerOne;
 	UPROPERTY( EditAnywhere, Category = "SnowSettings" ) FVector SnowCornerTwo;
 private:
-	UPROPERTY()
-	UMaterialParameterCollectionInstance* MPC_Instance = nullptr;
 
-	UPROPERTY()
-	TArray<USceneComponent*> TrackedObjects;
+	UPROPERTY()	UMaterialParameterCollectionInstance* MPC_Instance = nullptr;
+	UPROPERTY()	TArray<USceneComponent*> TrackedObjects;
 	int ObjectIndex = 0;
 	
 
 public:
-	UFUNCTION( BlueprintCallable ) void SetSnowCornerOne( FVector _pos){SnowCornerOne = _pos;}
-	UFUNCTION( BlueprintCallable ) void SetSnowCornerTwo( FVector _pos){SnowCornerTwo = _pos;}
+	UFUNCTION( BlueprintCallable ) void SetSnowCornerOne( FVector _pos){SnowCornerOne = _pos;UpdateCornersMPC();}
+	UFUNCTION( BlueprintCallable ) void SetSnowCornerTwo( FVector _pos){SnowCornerTwo = _pos;UpdateCornersMPC();}
+	UFUNCTION( BlueprintCallable ) void UpdateCornersMPC();
 	
 	UFUNCTION( BlueprintCallable ) void AddTrackedObjects  ( TArray<USceneComponent*> _trackedComponent);
 	UFUNCTION( BlueprintCallable ) void AddTrackedObject   ( USceneComponent*         _trackedComponent);
