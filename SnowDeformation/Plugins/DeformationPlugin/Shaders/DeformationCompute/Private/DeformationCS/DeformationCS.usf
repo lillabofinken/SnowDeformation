@@ -9,7 +9,15 @@ float4x4            TrackedObjectMatrices[ 64 ];
 int					ObjectAmount;
 float4				SnowCorners;
 
-
+float GetXSize(float4x4 _matrix)
+{
+	float3 xAxis = float3(_matrix[0][0], _matrix[0][1], _matrix[0][2]);
+	return length(xAxis);
+}
+float3 GetForwardVector(float4x4 _matrix)
+{
+	return normalize(float3(_matrix[0][0], _matrix[0][1], _matrix[0][2]));
+}
 
 [numthreads(THREADS_X, THREADS_Y, THREADS_Z)]
 void DeformationCS(
@@ -27,34 +35,21 @@ void DeformationCS(
 	for( int i = 0; i < ObjectAmount; i++ )
 	{
 		const float3 ObjectRelativePosition = TrackedObjectMatrices[ i ][ 3 ].xyz + float3( SnowCorners.xy ,0 );
-		const float  ObjectScaleX           = TrackedObjectMatrices[ i ][ 0 ].x * DefaultSize;
-		const float  ObjectScaleSquaredX    = ObjectScaleX * ObjectScaleX;
+		const float  ObjectScaleX    = GetXSize(TrackedObjectMatrices[ i ] ) * DefaultSize;
 	
-		const float3 PixelObjectDifference        = PixelPosition - ObjectRelativePosition;
-		const float  xyDistanceSquared            = dot(PixelObjectDifference.xy, PixelObjectDifference.xy);
-	
-		const float xyInRangeMask = step( xyDistanceSquared, ObjectScaleSquaredX);
-
-		const float Intersection = sqrt( max( 0.0, ObjectScaleSquaredX - xyDistanceSquared ) );
-		SnowDepthCM.r = min( SnowDepthCM.r, ObjectRelativePosition.z - Intersection );
+		const float3 PixelObjectDifference = PixelPosition - ObjectRelativePosition;
+		const float  xyDistance            = length(PixelObjectDifference.xy);
 		
-		//SnowDepthCM.r = saturate(SnowDepthCM.r - 1.0f * xyInRangeMask);
-		//SnowDepth = saturate(xyInRangeMask);
-		//SnowDepth = frac(length(sqrt(xyDistanceSquared)/100));
+		const float Intersection = sqrt( max( 0.0, ObjectScaleX*ObjectScaleX - xyDistance*xyDistance ) ); //This is not optimal but its 22:22 and I don't care
+		SnowDepthCM.r = min( SnowDepthCM.r, ObjectRelativePosition.z - Intersection );
+
+		const float PileupThickness = ObjectScaleX * 0.4;
+		const float PileupCenterRadius = ObjectScaleX + PileupThickness;
+		const float PileupDistance = abs( xyDistance - PileupCenterRadius );
+		float PileupShape = PileupDistance / PileupThickness;
+		float PileUp = saturate(-PileupShape + 1.0);
+		SnowDepthCM.g = pow(PileUp,0.5);
 	}
 	
-	{
-		//float distanceFrac = frac(length(PixelPosition - ObjectPosition) * 0.01);
-		//
-		//float2 pos = TrackedObjectMatrices[ 0 ][ 3 ].xy;
-		//pos -= SnowCorners.xy;
-		//
-		//// Simple checkerboard
-		//int x = floor( DispatchThreadId.x / 16.f );
-		//int y = floor( DispatchThreadId.y / 16.f );
-		//int c = (x + y % 2) % 2;
-		//float c2 = frac( pos.x * 0.01f );
-	}
-	
-	RenderTarget[ DispatchThreadId.xy ] = float2( SnowDepthCM / MaxSnowDepth );
+	RenderTarget[ DispatchThreadId.xy ] = float2( SnowDepthCM / float2(MaxSnowDepth,1) );
 }

@@ -117,7 +117,8 @@ TArray<FMatrix44f> UComputeShaderManagerComponent::MatricesToSend()
 		if( !TrackedObjects.IsValidIndex( ObjectIndex ) ) ObjectIndex = 0;
 
 		auto object = TrackedObjects[ ObjectIndex ];
-
+		ObjectIndex++; // CAN ONLY BE HERE IF IT WON'T BE USED BELLOW
+		
 		if( IsValid( object ) )
 		{
 			const float scale = object->GetComponentScale().X * object->GetComponentScale().X;
@@ -128,9 +129,12 @@ TArray<FMatrix44f> UComputeShaderManagerComponent::MatricesToSend()
 			FCollisionObjectQueryParams objectQueryParams;
 			objectQueryParams.AddObjectTypesToQuery(DeformationChannel);
 
+
+
 			FHitResult hit;
 			GetWorld()->LineTraceSingleByObjectType( hit, traceStart, traceEnd,objectQueryParams );
 
+			if(debug) DrawDebugLine(GetWorld(),traceStart, traceEnd, hit.bBlockingHit ? FColor::Red :FColor::Green, false, 0.0f, 0, 10 );
 			if ( !hit.bBlockingHit)
 				continue;
 			
@@ -138,11 +142,9 @@ TArray<FMatrix44f> UComputeShaderManagerComponent::MatricesToSend()
 
 			FMatrix44f matrix = FMatrix44f( TrackedObjects[ i ]->GetComponentTransform().ToMatrixWithScale() );
 			matrix.M[ 3 ][ 2 ] = height;
+			
 			output.Add( matrix) ;
 
-#if !UE_BUILD_SHIPPING
-			if(debug) DrawDebugLine(GetWorld(),traceStart, traceEnd, hit.bBlockingHit ? FColor::Red :FColor::Green, false, 0.0f, 0, 10 );
-#endif
 		}
 		else
 		{
@@ -152,7 +154,6 @@ TArray<FMatrix44f> UComputeShaderManagerComponent::MatricesToSend()
 			
 			continue;
 		}
-		ObjectIndex++;
 	}
 	return output;
 }
