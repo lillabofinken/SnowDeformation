@@ -130,6 +130,9 @@ TArray<FMatrix44f> UComputeShaderManagerComponent::MatricesToSend()
 
 			FHitResult hit;
 			GetWorld()->LineTraceSingleByObjectType( hit, traceStart, traceEnd,objectQueryParams );
+
+			if ( !hit.bBlockingHit)
+				continue;
 			
 			const float height = hit.bBlockingHit ? hit.Distance : 10000000.0f;
 

@@ -22,7 +22,7 @@ void DeformationCS(
 	const float2 UV             = float2( DispatchThreadId.xy ) / float2( Resolution );
 	const float3 PixelPosition  = float3( UV * MapScale, 0 );
 
-	float2 SnowDepth = RenderTargetRead.Load(DispatchThreadId).xy;
+	float2 SnowDepthCM = RenderTargetRead.Load(int3(DispatchThreadId.xy, 0)).xy * MaxSnowDepth;
 
 	for( int i = 0; i < ObjectAmount; i++ )
 	{
@@ -33,18 +33,13 @@ void DeformationCS(
 		const float3 PixelObjectDifference        = PixelPosition - ObjectRelativePosition;
 		const float  xyDistanceSquared            = dot(PixelObjectDifference.xy, PixelObjectDifference.xy);
 	
-		const float xyInRangeMask = step( ObjectScaleSquaredX,  xyDistanceSquared);
+		const float xyInRangeMask = step( xyDistanceSquared, ObjectScaleSquaredX);
 
-		//if(length(PixelObjectDifference.xy) > ObjectScaleX )
-		//{
-		//	SnowDepth = 1;
-		//}
-		//else
-		//{
-		//	SnowDepth = 0;
-		//}
-		//SnowDepth = saturate(SnowDepth - 1.0f * xyInRangeMask);
-		SnowDepth = saturate(xyInRangeMask);
+		const float Intersection = sqrt( max( 0.0, ObjectScaleSquaredX - xyDistanceSquared ) );
+		SnowDepthCM.r = min( SnowDepthCM.r, ObjectRelativePosition.z - Intersection );
+		
+		//SnowDepthCM.r = saturate(SnowDepthCM.r - 1.0f * xyInRangeMask);
+		//SnowDepth = saturate(xyInRangeMask);
 		//SnowDepth = frac(length(sqrt(xyDistanceSquared)/100));
 	}
 	
@@ -61,5 +56,5 @@ void DeformationCS(
 		//float c2 = frac( pos.x * 0.01f );
 	}
 	
-	RenderTarget[ DispatchThreadId.xy ] = float2( SnowDepth );
+	RenderTarget[ DispatchThreadId.xy ] = float2( SnowDepthCM / MaxSnowDepth );
 }
