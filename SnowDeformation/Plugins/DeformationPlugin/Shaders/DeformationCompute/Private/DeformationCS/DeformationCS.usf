@@ -35,21 +35,24 @@ void DeformationCS(
 	for( int i = 0; i < ObjectAmount; i++ )
 	{
 		const float3 ObjectRelativePosition = TrackedObjectMatrices[ i ][ 3 ].xyz + float3( SnowCorners.xy ,0 );
-		const float  ObjectScaleX           = GetXSize(TrackedObjectMatrices[ i ] ) * DefaultSize;
+		const float  ObjectScaleRadiusX           = GetXSize(TrackedObjectMatrices[ i ] ) * DefaultSize;
 	
 		const float3 PixelObjectDifference = PixelPosition - ObjectRelativePosition;
 		const float  xyDistance            = length(PixelObjectDifference.xy);
 
 		//const float EffectMask = step(ObjectScaleX, xyDistance );
-		const float Intersection = sqrt( max( 0.0, ObjectScaleX*ObjectScaleX - xyDistance*xyDistance ) ); //This is not optimal but its 22:22 and I don't care
+		
+		const float Intersection = sqrt( max( 0.0, ObjectScaleRadiusX*ObjectScaleRadiusX - xyDistance*xyDistance ) ); //This is not optimal but its 22:22 and I don't care
 		SnowDepthCM.r = min( SnowDepthCM.r, max(ObjectRelativePosition.z, SnowDepthCM.r) - Intersection );
 
-		const float PileupThickness = 15.0; //ObjectScaleX * 0.4;
-		const float PileupCenterRadius = ObjectScaleX + PileupThickness;
+		const float PileupMultiplier = saturate((ObjectScaleRadiusX - ObjectRelativePosition.z + ObjectScaleRadiusX + SnowDepthCM.r) / SnowDepthCM.r);
+
+		const float PileupThickness = 15.0 * PileupMultiplier; //ObjectScaleX * 0.4;
+		const float PileupCenterRadius = (ObjectScaleRadiusX + PileupThickness) * PileupMultiplier;
 		const float PileupDistance = abs( xyDistance - PileupCenterRadius );
 		float PileupShape = PileupDistance / PileupThickness;
 		float PileUp = -PileupShape + 1.0;
-		SnowDepthCM.g =max( SnowDepthCM.g, PileUp * MaxSnowDepth );
+		SnowDepthCM.g = max( SnowDepthCM.g, PileUp * MaxSnowDepth * PileupMultiplier );
 	}
 	
 	RenderTarget[ DispatchThreadId.xy ] = float2( SnowDepthCM / MaxSnowDepth );
