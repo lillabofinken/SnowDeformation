@@ -14,13 +14,13 @@ struct DEFORMATIONCOMPUTE_API FDeformationCSDispatchParams
 	int Y;
 	int Z;
 
-	
+	UTexture2D*		NoiseTexture;
 	FRenderTarget*	RenderTarget;
 	FMatrix44f		TrackedObjectMatrices[64];
 	int				ObjectAmount;
 	float			MaxSnowDepth;
 	FLinearColor	SnowCorners;
-	
+	float			Time;
 
 	FDeformationCSDispatchParams(int x, int y, int z)
 		: X(x)

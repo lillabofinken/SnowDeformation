@@ -4,6 +4,7 @@
 #include "MeshPassProcessor.inl"
 #include "StaticMeshResources.h"
 #include "DynamicMeshBuilder.h"
+
 #include "RenderGraphResources.h"
 #include "GlobalShader.h"
 #include "UnifiedBuffer.h"
@@ -57,14 +58,18 @@ public:
 	
 	SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, RenderTarget)
 	SHADER_PARAMETER_RDG_TEXTURE    ( Texture2D, RenderTargetRead )
+	SHADER_PARAMETER_RDG_TEXTURE    ( Texture2D, NoiseTexture )
 	SHADER_PARAMETER                ( FIntPoint, Resolution )
 	
 	SHADER_PARAMETER_ARRAY(FMatrix44f, TrackedObjectMatrices, [64])
 	SHADER_PARAMETER(int, ObjectAmount)
 	SHADER_PARAMETER(float, MaxSnowDepth)
 	SHADER_PARAMETER(FLinearColor, SnowCorners)
+
+	SHADER_PARAMETER(float, time)
 	
-	
+	SHADER_PARAMETER_SAMPLER(SamplerState, TextureSampler)
+	// On the shader side: SamplerState TextureSampler; // CPP side: TStaticSamplerState<ESamplerFilter::SF_Bilinear>::GetRHI();
 
 	END_SHADER_PARAMETER_STRUCT()// END
 
@@ -134,10 +139,12 @@ void FDeformationCSInterface::DispatchRenderThread(FRHICommandListImmediate& RHI
 			FRDGTextureRef TmpTexture = GraphBuilder.CreateTexture(Desc, TEXT("DeformationCS_TempTexture"));
 			FRDGTextureRef TargetTexture = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("DeformationCS_RT_Write"));
 			FRDGTextureRef InputTexture = RegisterExternalTexture(GraphBuilder,Params.RenderTarget->GetRenderTargetTexture(),TEXT( "DeformationCS_RT_Read" ) );
+			FRDGTextureRef NoiseTexture = RegisterExternalTexture(GraphBuilder,Params.NoiseTexture->GetResource()->GetTexture2DRHI(),TEXT( "DeformationCS_NoiseTexture" ) );
 			{// Pass Values to shader, EPIC VERY COOL
 				
 				PassParameters->RenderTarget = GraphBuilder.CreateUAV(TmpTexture);
 				PassParameters->RenderTargetRead = InputTexture;
+				PassParameters->NoiseTexture = NoiseTexture;
 				PassParameters->Resolution = resolution;
 				for( int i = 0; i < /*Params.ObjectAmount*/ 64; i++ )
 				{
@@ -145,7 +152,10 @@ void FDeformationCSInterface::DispatchRenderThread(FRHICommandListImmediate& RHI
 				}
 				PassParameters->ObjectAmount = Params.ObjectAmount;
 				PassParameters->MaxSnowDepth = Params.MaxSnowDepth;
-				PassParameters->SnowCorners = Params.SnowCorners;
+				PassParameters->SnowCorners  = Params.SnowCorners;
+				PassParameters->time		 = Params.Time;
+				
+				PassParameters->TextureSampler = TStaticSamplerState<ESamplerFilter::SF_Bilinear>::GetRHI();
 				
 			}// Pass Values to shader, EPIC VERY COOL
 

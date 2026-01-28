@@ -1,6 +1,6 @@
 #include "DeformationCSLibrary.h"
 
-void UDeformationCSLibrary::ExecuteRTComputeShader(UTextureRenderTarget2D* _RT, float _SnowDepth, TArray<FMatrix44f> _TrackedObjectMatrices)
+void UDeformationCSLibrary::ExecuteRTComputeShader(UTextureRenderTarget2D* _RT, float _SnowDepth, TArray<FMatrix44f> _TrackedObjectMatrices, float _Time)
 {
 	//Create a dispatch parameters struct and fill it the input array with our args
 	FDeformationCSDispatchParams Params(_RT->SizeX, _RT->SizeY, 1);

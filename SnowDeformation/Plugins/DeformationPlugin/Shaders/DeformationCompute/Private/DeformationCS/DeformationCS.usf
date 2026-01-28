@@ -2,12 +2,15 @@
 
 RWTexture2D<float2>	RenderTarget;
 Texture2D<float2>   RenderTargetRead;
+Texture2D<float>    NoiseTexture;
+SamplerState        TextureSampler;
 int2                Resolution;
 
 float				MaxSnowDepth;
 float4x4            TrackedObjectMatrices[ 64 ];
 int					ObjectAmount;
 float4				SnowCorners;
+float				time;
 
 float GetXSize(float4x4 _matrix)
 {
@@ -18,12 +21,22 @@ float3 GetForwardVector(float4x4 _matrix)
 {
 	return normalize(float3(_matrix[0][0], _matrix[0][1], _matrix[0][2]));
 }
+float combinedMatrixValue(float4x4 _matrix)
+{
+	float value =
+		_matrix[0][0] + _matrix[0][1] + _matrix[0][2] + _matrix[0][3] +
+			_matrix[1][0] + _matrix[1][1] + _matrix[1][2] + _matrix[1][3] +
+				_matrix[2][0] + _matrix[2][1] + _matrix[2][2] + _matrix[2][3] +
+					_matrix[3][0] + _matrix[3][1] + _matrix[3][2] + _matrix[3][3];
+	return value;
+}
 
 [numthreads(THREADS_X, THREADS_Y, THREADS_Z)]
 void DeformationCS(
 	uint3 DispatchThreadId : SV_DispatchThreadID,
 	uint GroupIndex : SV_GroupIndex )
 {
+	float returnValue = 0.0;
 	const float DefaultSize = 50.0;
 	
 	const float2 MapScale       = abs( SnowCorners.xy - SnowCorners.zw );
@@ -31,11 +44,12 @@ void DeformationCS(
 	const float3 PixelPosition  = float3( UV * MapScale, 0 );
 
 	float2 SnowDepthCM = RenderTargetRead.Load(int3(DispatchThreadId.xy, 0)).xy * MaxSnowDepth;
+	const float Noise  = NoiseTexture.Sample(TextureSampler, frac(UV * 2.0));
 
 	for( int i = 0; i < ObjectAmount; i++ )
 	{
 		const float3 ObjectRelativePosition = TrackedObjectMatrices[ i ][ 3 ].xyz + float3( SnowCorners.xy ,0 );
-		const float  ObjectScaleRadiusX           = GetXSize(TrackedObjectMatrices[ i ] ) * DefaultSize;
+		const float  ObjectScaleRadiusX           = GetXSize(TrackedObjectMatrices[ i ] ) * DefaultSize * (1.0 + (Noise - 0.5) * 0.5);
 	
 		const float3 PixelObjectDifference = PixelPosition - ObjectRelativePosition;
 		const float  xyDistance            = length(PixelObjectDifference.xy);
@@ -45,14 +59,18 @@ void DeformationCS(
 		const float Intersection = sqrt( max( 0.0, ObjectScaleRadiusX*ObjectScaleRadiusX - xyDistance*xyDistance ) ); //This is not optimal but its 22:22 and I don't care
 		SnowDepthCM.r = min( SnowDepthCM.r, max(ObjectRelativePosition.z, SnowDepthCM.r) - Intersection );
 
-		const float PileupMultiplier = saturate((ObjectScaleRadiusX - ObjectRelativePosition.z + ObjectScaleRadiusX + SnowDepthCM.r) / SnowDepthCM.r);
-
-		const float PileupThickness = 15.0 * PileupMultiplier; //ObjectScaleX * 0.4;
+		float PileupMultiplier = 1.0 - Noise * 0.75;
+		
+		const float PileupThickness = 15.0 * PileupMultiplier;
 		const float PileupCenterRadius = (ObjectScaleRadiusX + PileupThickness) * PileupMultiplier;
 		const float PileupDistance = abs( xyDistance - PileupCenterRadius );
 		float PileupShape = PileupDistance / PileupThickness;
 		float PileUp = -PileupShape + 1.0;
-		SnowDepthCM.g = max( SnowDepthCM.g, PileUp * MaxSnowDepth * PileupMultiplier );
+
+		float testSize = ObjectScaleRadiusX * (1.0 + (Noise - 0.5) * 0.5);
+		returnValue = 1.0 - smoothstep(testSize, testSize * 1.5 + 30, xyDistance);
+		SnowDepthCM.g = max( SnowDepthCM.g, pow(returnValue, 1.25 ) * MaxSnowDepth );
+		
 	}
 	
 	RenderTarget[ DispatchThreadId.xy ] = float2( SnowDepthCM / MaxSnowDepth );

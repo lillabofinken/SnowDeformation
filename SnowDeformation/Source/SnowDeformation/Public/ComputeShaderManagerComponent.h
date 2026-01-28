@@ -36,6 +36,7 @@ public:
 	
 	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) UMaterialInterface*           DeformationClearMaterial;
 	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) UTextureRenderTarget2D*       RenderTarget;
+	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) UTexture2D*					 NoiseTexture;
 	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) UMaterialParameterCollection* MPC = nullptr;
 
 	UPROPERTY( EditAnywhere, Category = "SnowSettings" ) TEnumAsByte<ECollisionChannel> DeformationChannel;

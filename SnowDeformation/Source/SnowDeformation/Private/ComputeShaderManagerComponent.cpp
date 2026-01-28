@@ -85,9 +85,11 @@ void UComputeShaderManagerComponent::SendDataAndRunShader()
 {
 	TArray<FMatrix44f> matrices = MatricesToSend();
 	FDeformationCSDispatchParams Params(RenderTarget->SizeX, RenderTarget->SizeY, 1);
-
-
+	float time = GetWorld()->GetTimeSeconds();
+	GEngine->AddOnScreenDebugMessage(63463, 5, FColor::Green, FString::SanitizeFloat(time));
+	Params.Time = time;
 	Params.RenderTarget = RenderTarget->GameThread_GetRenderTargetResource();
+	Params.NoiseTexture = NoiseTexture;
 	Params.MaxSnowDepth = MaxSnowDepth;
 	Params.SnowCorners = FLinearColor(SnowCornerOne.X, SnowCornerOne.Y, SnowCornerTwo.X, SnowCornerTwo.Y);
 	
