@@ -51,6 +51,7 @@ void UComputeShaderManagerComponent::UpdateCornersMPC()
 	{
 		FLinearColor corners = FLinearColor(SnowCornerOne.X,SnowCornerOne.Y,SnowCornerTwo.X,SnowCornerTwo.Y );
 		MPC_Instance->SetVectorParameterValue("Corners",corners);
+		MPC_Instance->SetScalarParameterValue( "POMSnowHeight", MaxSnowDepth );
 	}
 }
 

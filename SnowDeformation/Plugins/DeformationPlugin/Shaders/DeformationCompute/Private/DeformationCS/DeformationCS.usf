@@ -69,5 +69,5 @@ void DeformationCS(
 		
 	}
 	
-	RenderTarget[ DispatchThreadId.xy ] = float2( SnowDepthCM / MaxSnowDepth );
+	RenderTarget[ DispatchThreadId.xy ] = saturate( float2( SnowDepthCM / MaxSnowDepth ) );
 }
