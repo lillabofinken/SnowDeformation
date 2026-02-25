@@ -49,7 +49,19 @@ void UComputeShaderManagerComponent::UpdateCornersMPC()
 {
 	if( MPC_Instance )
 	{
-		FLinearColor corners = FLinearColor(SnowCornerOne.X,SnowCornerOne.Y,SnowCornerTwo.X,SnowCornerTwo.Y );
+		FVector4f CornersVector
+		(
+			SnowCornerOne.X < SnowCornerTwo.X ? SnowCornerOne.X : SnowCornerTwo.X,
+			SnowCornerOne.Y < SnowCornerTwo.Y ? SnowCornerOne.Y : SnowCornerTwo.Y,
+			SnowCornerOne.X > SnowCornerTwo.X ? SnowCornerOne.X : SnowCornerTwo.X,
+			SnowCornerOne.Y > SnowCornerTwo.Y ? SnowCornerOne.Y : SnowCornerTwo.Y );
+		FLinearColor corners = CornersVector;
+		//(
+		//	SnowCornerOne.X < SnowCornerTwo.X ? SnowCornerOne.X : SnowCornerTwo.X,
+		//	SnowCornerOne.Y < SnowCornerTwo.Y ? SnowCornerOne.Y : SnowCornerTwo.Y,
+		//	SnowCornerOne.X > SnowCornerTwo.X ? SnowCornerOne.X : SnowCornerTwo.X,
+		//	SnowCornerOne.Y > SnowCornerTwo.Y ? SnowCornerOne.Y : SnowCornerTwo.Y );
+		
 		MPC_Instance->SetVectorParameterValue("Corners",corners);
 		MPC_Instance->SetScalarParameterValue( "POMSnowHeight", MaxSnowDepth );
 	}
@@ -92,7 +104,16 @@ void UComputeShaderManagerComponent::SendDataAndRunShader()
 	Params.RenderTarget = RenderTarget->GameThread_GetRenderTargetResource();
 	Params.NoiseTexture = NoiseTexture;
 	Params.MaxSnowDepth = MaxSnowDepth;
-	Params.SnowCorners = FLinearColor(SnowCornerOne.X, SnowCornerOne.Y, SnowCornerTwo.X, SnowCornerTwo.Y);
+
+	FVector4f CornersVector
+		(
+			SnowCornerOne.X < SnowCornerTwo.X ? SnowCornerOne.X : SnowCornerTwo.X,
+			SnowCornerOne.Y < SnowCornerTwo.Y ? SnowCornerOne.Y : SnowCornerTwo.Y,
+			SnowCornerOne.X > SnowCornerTwo.X ? SnowCornerOne.X : SnowCornerTwo.X,
+			SnowCornerOne.Y > SnowCornerTwo.Y ? SnowCornerOne.Y : SnowCornerTwo.Y );
+	FLinearColor corners = CornersVector;
+	
+	Params.SnowCorners = corners;
 	
 	for(int i = 0; i < 64; i++ )
 	{
