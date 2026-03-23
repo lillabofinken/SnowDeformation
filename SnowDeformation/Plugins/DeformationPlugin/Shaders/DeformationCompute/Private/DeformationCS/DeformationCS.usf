@@ -61,7 +61,7 @@ void DeformationCS(
 
 		const float PileupMultiplier = 1.0 - Noise * 0.75;
 
-		const float HeightMultiplier = 1.0 - saturate((ObjectRelativePosition.z - ObjectScaleRadiusX) / SnowDepthCM);
+		const float HeightMultiplier = 1.0 - saturate((ObjectRelativePosition.z - ObjectScaleRadiusX) / SnowDepthCM.r);
 		float testSize = ObjectScaleRadiusX * (1.0 + (Noise - 0.5) * 0.5);
 		testSize *= HeightMultiplier;
 		returnValue = 1.0 - smoothstep(testSize, testSize * 1.5 + 30 * HeightMultiplier, xyDistance);
