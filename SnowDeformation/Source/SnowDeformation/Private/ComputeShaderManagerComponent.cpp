@@ -158,7 +158,7 @@ TArray<FMatrix44f> UComputeShaderManagerComponent::MatricesToSend()
 			FHitResult hit;
 			GetWorld()->LineTraceSingleByObjectType( hit, traceStart, traceEnd,objectQueryParams );
 
-			if(debug) DrawDebugLine(GetWorld(),traceStart, traceEnd, hit.bBlockingHit ? FColor::Red :FColor::Green, false, 0.0f, 0, 10 );
+			if(debug) DrawDebugLine(GetWorld(),traceStart, traceEnd, hit.bBlockingHit ? FColor::Red :FColor::Green, false, 0.0f, 0, 2.5 );
 			if ( !hit.bBlockingHit)
 				continue;
 			
